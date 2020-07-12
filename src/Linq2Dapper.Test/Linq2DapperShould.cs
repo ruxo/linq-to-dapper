@@ -95,6 +95,204 @@ namespace Dapper.Contrib.Linq2Dapper.Test
                 results.Length.Should().Be(1);
             }
         }
+
+                [Fact]
+        public void Top1Statement() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>().FirstOrDefault(m => !m.IsActive);
+            results.Should().NotBeNull();
+        }
+
+
+        [Fact]
+        public void Top10A() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>().Take(5).ToArray();
+            results.Length.Should().Be(5);
+        }
+
+        [Fact]
+        public void Top10B()
+        {
+            const int TopCount = 10;
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>().Take(TopCount).ToArray();
+            results.Length.Should().Be(5);
+        }
+
+        [Fact]
+        public void Top10C() {
+            using var cn = CreateNewDatabase();
+            for (var topCount = 1; topCount < 5; topCount++)
+            {
+                var results = cn.Query<DataType>().Take(topCount).ToArray();
+                results.Length.Should().Be(topCount);
+            }
+        }
+
+        [Fact]
+        public void Distinct() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>().Distinct().ToArray();
+            results.Length.Should().Be(5);
+        }
+
+        [Fact]
+        public void OrderBy() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>().OrderBy(m => m.Name).ToArray();
+            results.Length.Should().Be(5);
+        }
+
+        [Fact]
+        public void OrderByAndThenBy() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>().OrderBy(m => m.Name).ThenBy(m => m.DataTypeId).ToArray();
+            results.Length.Should().Be(5);
+        }
+
+        [Fact]
+        public void OrderByWithTop() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>().OrderBy(m => m.Name).ThenBy(m => m.DataTypeId).Take(5).ToArray();
+            results.Length.Should().Be(5);
+        }
+
+        [Fact]
+        public void WhereSimpleEqual() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => m.Name == "text").ToArray();
+            results.Length.Should().Be(1);
+            results[0].Name.Should().Be("text");
+        }
+
+        [Fact]
+        public void WhereSimpleEqualWithoutParameter() {
+            using var cn = CreateNewDatabase();
+            // ReSharper disable once EqualExpressionComparison
+            var results = cn.Query<DataType>(m => m.DataTypeId == m.DataTypeId).ToArray();
+            results.Length.Should().Be(5);
+        }
+
+        [Fact]
+        public void WhereIsNullOrEmpty() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => String.IsNullOrEmpty(m.Name)).ToArray();
+            results.Length.Should().Be(0);
+        }
+
+        [Fact]
+        public void WhereNotIsNullOrEmpty() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => !String.IsNullOrEmpty(m.Name)).ToArray();
+            results.Length.Should().Be(5);
+        }
+
+        [Fact]
+        public void WhereHasValue() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => m.Created.HasValue).ToArray();
+            results.Length.Should().Be(5);
+        }
+
+        [Fact]
+        public void WhereNotHasValue() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => !m.Created.HasValue).ToArray();
+            results.Length.Should().Be(0);
+        }
+
+        [Fact]
+        public void WhereLike() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => m.Name.Contains("te")).ToArray();
+            results.Length.Should().Be(2);
+        }
+
+        [Fact]
+        public void WhereEndsWith() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => m.Name.StartsWith("te")).ToArray();
+            results.Length.Should().Be(1);
+        }
+
+        [Fact]
+        public void WhereStartsWith() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => m.Name.EndsWith("xt")).ToArray();
+            results.Length.Should().Be(1);
+        }
+
+        [Fact]
+        public void WhereEndsWithAndComparison() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => m.Name.StartsWith("te", StringComparison.OrdinalIgnoreCase)).ToArray();
+            results.Length.Should().Be(1);
+        }
+
+        [Fact]
+        public void WhereStartsWithAndComparison() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => m.Name.EndsWith("xt", StringComparison.OrdinalIgnoreCase)).ToArray();
+            results.Length.Should().Be(1);
+        }
+
+        [Fact]
+        public void WhereNotLike() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => !m.Name.Contains("te")).ToArray();
+            results.Length.Should().Be(3);
+        }
+
+        [Fact]
+        public void WhereNotEndsWith() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => !m.Name.StartsWith("te")).ToArray();
+            results.Length.Should().Be(4);
+        }
+
+        [Fact]
+        public void WhereNotStartsWith() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => !m.Name.EndsWith("xt")).ToArray();
+            results.Length.Should().Be(4);
+        }
+
+        [Fact]
+        public void TwoPartWhereAnd() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => m.Name == "text" && m.Created.HasValue).ToArray();
+            results.Length.Should().Be(1);
+        }
+
+        [Fact]
+        public void TwoPartWhereOr() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => m.Name == "text" || m.Name == "int").ToArray();
+            results.Length.Should().Be(2);
+        }
+
+        [Fact]
+        public void MultiPartWhereAndOr() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => m.Name == "text" && (m.Name == "int" || m.Created.HasValue)).ToArray();
+            results.Length.Should().Be(1);
+        }
+
+        [Fact]
+        public void MultiPartWhereAndOr2() {
+            using var cn = CreateNewDatabase();
+            var results = cn.Query<DataType>(m => m.Name != "text" && (m.Name == "int" || m.Created.HasValue)).ToArray();
+            results.Length.Should().Be(4);
+        }
+
+        [Fact]
+        public void Single() {
+            using var cn = CreateNewDatabase();
+            var result = cn.Query<DataType>().Single(m => m.Name == "text");
+            result.Name.Should().Be("text");
+        }
+
         static SqliteConnection CreateNewDatabase() {
             var connection = new SqliteConnection("Data Source=:memory:");
             connection.Open();
