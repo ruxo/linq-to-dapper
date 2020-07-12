@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
 
@@ -12,8 +10,8 @@ namespace Dapper.Contrib.Linq2Dapper
     {
         #region Constructors
 
-        /// <summary> 
-        /// This constructor is called by Provider.CreateQuery(). 
+        /// <summary>
+        /// This constructor is called by Provider.CreateQuery().
         /// </summary>
         /// <param name="provider"></param>
         /// <param name="expression"></param>
@@ -38,8 +36,8 @@ namespace Dapper.Contrib.Linq2Dapper
             Expression = expression;
         }
 
-        /// <summary> 
-        /// This constructor is called by Provider.CreateQuery(). 
+        /// <summary>
+        /// This constructor is called by Provider.CreateQuery().
         /// </summary>
         /// <param name="connection"></param>
         /// <param name="provider"></param>

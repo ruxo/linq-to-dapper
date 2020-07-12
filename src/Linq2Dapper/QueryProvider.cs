@@ -1,19 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
 using Dapper.Contrib.Linq2Dapper.Exceptions;
 using Dapper.Contrib.Linq2Dapper.Helpers;
 using System.Collections;
+using System.Data.Common;
 
 namespace Dapper.Contrib.Linq2Dapper
 {
     internal class QueryProvider<TData> : IQueryProvider
     {
         private readonly IDbConnection _connection;
-        private readonly QueryBuilder<TData> _qb; 
+        private readonly QueryBuilder<TData> _qb;
 
         public QueryProvider(IDbConnection connection)
         {
@@ -34,7 +33,7 @@ namespace Dapper.Contrib.Linq2Dapper
             }
         }
 
-        // Queryable's collection-returning standard query operators call this method. 
+        // Queryable's collection-returning standard query operators call this method.
         public IQueryable<TResult> CreateQuery<TResult>(Expression expression)
         {
             return new Linq2Dapper<TResult>(this, expression);
@@ -50,8 +49,8 @@ namespace Dapper.Contrib.Linq2Dapper
         {
             return (TResult)Query(expression, typeof(IEnumerable).IsAssignableFrom(typeof(TResult)));
         }
-        
-        // Executes the expression tree that is passed to it. 
+
+        // Executes the expression tree that is passed to it.
         private object Query(Expression expression, bool isEnumerable = false)
         {
             try
@@ -64,7 +63,7 @@ namespace Dapper.Contrib.Linq2Dapper
                 if (isEnumerable) return data;
                 return data.ElementAt(0);
             }
-            catch (SqlException ex)
+            catch (DbException ex)
             {
                 throw new InvalidQueryException(ex.Message + " | " + _qb.Sql);
             }

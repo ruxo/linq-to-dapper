@@ -53,7 +53,7 @@ namespace Dapper.Contrib.Linq2Dapper.Helpers
                 }
             }
 
-            // We should have returned by now. 
+            // We should have returned by now.
             throw new Exception("There is a bug in this program.");
         }
 
@@ -71,7 +71,7 @@ namespace Dapper.Contrib.Linq2Dapper.Helpers
                 return GetPropertyNameFromExpression(be.Right);
             }
 
-            // We should have returned by now. 
+            // We should have returned by now.
             throw new Exception("There is a bug in this program.");
         }
 
