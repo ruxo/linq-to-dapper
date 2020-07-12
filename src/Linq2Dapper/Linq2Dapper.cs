@@ -17,23 +17,11 @@ namespace Dapper.Contrib.Linq2Dapper
         /// <param name="expression"></param>
         public Linq2Dapper(IQueryProvider provider, Expression expression)
         {
-            if (provider == null)
-            {
-                throw new ArgumentNullException("provider");
-            }
-
-            if (expression == null)
-            {
-                throw new ArgumentNullException("expression");
-            }
+            Provider = provider ?? throw new ArgumentNullException(nameof(provider));
+            Expression = expression ?? throw new ArgumentNullException(nameof(expression));
 
             if (!typeof(IQueryable<TData>).IsAssignableFrom(expression.Type))
-            {
-                throw new ArgumentOutOfRangeException("expression");
-            }
-
-            Provider = provider;
-            Expression = expression;
+                throw new ArgumentOutOfRangeException(nameof(expression));
         }
 
         /// <summary>
@@ -42,11 +30,11 @@ namespace Dapper.Contrib.Linq2Dapper
         /// <param name="connection"></param>
         /// <param name="provider"></param>
         /// <param name="expression"></param>
-        public Linq2Dapper(IDbConnection connection, IQueryProvider provider = null, Expression<Func<TData, bool>>  expression = null)
+        public Linq2Dapper(IDbConnection connection, IQueryProvider? provider = null, Expression<Func<TData, bool>>? expression = null)
         {
             Connection = connection;
             Provider = provider ?? new QueryProvider<TData>(connection);
-            Expression = (Expression) expression ?? Expression.Constant(this);
+            Expression = (Expression?) expression ?? Expression.Constant(this);
         }
 
         #endregion

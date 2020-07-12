@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Linq.Expressions;
 
-namespace Dapper.Contrib.Linq.Extensions
+namespace Dapper.Contrib.Linq2Dapper.Extensions
 {
 	public static class LinqExtensions
 	{
