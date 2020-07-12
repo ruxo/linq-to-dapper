@@ -15,13 +15,10 @@ namespace Dapper.Contrib.Linq2Dapper
         /// </summary>
         /// <param name="provider"></param>
         /// <param name="expression"></param>
-        public Linq2Dapper(IQueryProvider provider, Expression expression)
+        public Linq2Dapper(IQueryProvider provider, Expression? expression = null)
         {
             Provider = provider ?? throw new ArgumentNullException(nameof(provider));
-            Expression = expression ?? throw new ArgumentNullException(nameof(expression));
-
-            if (!typeof(IQueryable<TData>).IsAssignableFrom(expression.Type))
-                throw new ArgumentOutOfRangeException(nameof(expression));
+            Expression = expression ?? Expression.Constant(this);
         }
 
         /// <summary>
@@ -31,37 +28,27 @@ namespace Dapper.Contrib.Linq2Dapper
         /// <param name="provider"></param>
         /// <param name="expression"></param>
         public Linq2Dapper(IDbConnection connection, IQueryProvider? provider = null, Expression<Func<TData, bool>>? expression = null)
-        {
-            Connection = connection;
-            Provider = provider ?? new QueryProvider<TData>(connection);
-            Expression = (Expression?) expression ?? Expression.Constant(this);
-        }
+            : this(provider ?? new QueryProvider<TData>(connection), expression)
+        { }
 
         #endregion
 
         #region Properties
 
-        public IQueryProvider Provider { get; private set; }
-        public IDbConnection Connection { get; private set; }
-        public Expression Expression { get; private set; }
+        public IQueryProvider Provider { get; }
+        public Expression Expression { get; }
 
-        public Type ElementType
-        {
-            get { return typeof(TData); }
-        }
+        public Type ElementType => typeof(TData);
 
         #endregion
 
         #region Enumerators
-        public IEnumerator<TData> GetEnumerator()
-        {
-            return (Provider.Execute<IEnumerable<TData>>(Expression)).GetEnumerator();
-        }
+        public IEnumerator<TData> GetEnumerator() =>
+            Provider.Execute<IEnumerable<TData>>(Expression).GetEnumerator();
 
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-        {
-            return (Provider.Execute<System.Collections.IEnumerable>(Expression)).GetEnumerator();
-        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() =>
+            Provider.Execute<System.Collections.IEnumerable>(Expression).GetEnumerator();
+
         #endregion
     }
 }

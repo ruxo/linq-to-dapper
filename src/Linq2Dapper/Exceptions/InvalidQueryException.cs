@@ -4,19 +4,9 @@ namespace Dapper.Contrib.Linq2Dapper.Exceptions
 {
     public class InvalidQueryException : Exception
     {
-        private readonly string _message;
+        public InvalidQueryException(string sql) : base(PrefixMessage(sql)) {}
+        public InvalidQueryException(string sql, Exception ex) : base(PrefixMessage(sql), ex){}
 
-        public InvalidQueryException(string message)
-        {
-            _message = message + " ";
-        }
-
-        public override string Message
-        {
-            get
-            {
-                return "The client query is invalid: " + _message;
-            }
-        }
+        static string PrefixMessage(string sql) => $"The client query is invalid: {sql}";
     }
 }
