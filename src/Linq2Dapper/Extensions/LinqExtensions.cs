@@ -19,17 +19,6 @@ namespace Dapper.Contrib.Linq2Dapper.Extensions
 		//}
 
 		/// <summary>
-		/// Casts a collection, at runtime, to a generic (or strongly-typed) collection.
-		/// </summary>
-		// public static IEnumerable<object> Cast(this System.Collections.IEnumerable sourceobjects, Type elementType) {
-		// 	var queryable = sourceobjects.AsQueryable();
-		// 	var castExpression = Expression.Call(typeof(Queryable), "Cast", new[] { elementType }, Expression.Constant(queryable));
-		// 	var lambdaCast = Expression.Lambda(castExpression, Expression.Parameter(typeof(System.Collections.IEnumerable)));
-		// 	var castresults = lambdaCast.Compile().DynamicInvoke(queryable);
-		// 	return (IEnumerable<object>)castresults;
-		// }
-
-		/// <summary>
 		/// Allows duplicates to exist from the first set if present before the union, but excludes any elements
 		/// from the second set which already exist in the left set during the union. This differs from the standard .NET union
 		/// because it will eliminate duplicates from the left set if any exist before the union.

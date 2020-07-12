@@ -56,7 +56,7 @@ namespace Dapper.Contrib.Linq2Dapper.Test
             var results = (from d in cntx.DataTypes
                            join a in cntx.Fields on d.DataTypeId equals a.DataTypeId
                            where a.DataTypeId == 1
-                           select d).ToArray();
+                           select a).ToArray();
 
             results.Length.Should().Be(3);
         }
