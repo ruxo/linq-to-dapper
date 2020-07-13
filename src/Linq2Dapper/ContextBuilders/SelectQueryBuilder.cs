@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using Dapper.Contrib.Linq2Dapper.ContextBuilders.SelectQuery;
 using Dapper.Contrib.Linq2Dapper.Helpers;
 using Dapper.Contrib.Linq2Dapper.Writers;
 
@@ -9,6 +10,7 @@ namespace Dapper.Contrib.Linq2Dapper.ContextBuilders
     sealed class SelectQueryBuilder<TData> : ExpressionVisitor
     {
         readonly MsSqlWriter<TData> writer = new MsSqlWriter<TData>();
+        readonly SelectBuilder selectContext = new SelectBuilder(typeof(TData));
 
         #region Visitors
 
@@ -16,7 +18,7 @@ namespace Dapper.Contrib.Linq2Dapper.ContextBuilders
         {
             if (!(node is ConstantExpression) || node.Type != typeof(Linq2Dapper<TData>))
                 Visit(node);
-            return (writer.SelectStatement(), writer.Parameters);
+            return (writer.SelectStatement(selectContext), writer.Parameters);
         }
 
         /// <summary>
@@ -31,10 +33,8 @@ namespace Dapper.Contrib.Linq2Dapper.ContextBuilders
             switch (node.Method.Name)
             {
                 case MethodCall.Select:
-                    var type = ((LambdaExpression)((UnaryExpression)node.Arguments[1]).Operand).Body.Type;
-                    QueryHelper.GetTypeProperties(type);
-                    writer.SelectType = type;
-                    return base.VisitMethodCall(node);
+                    selectContext.Visit(node.Arguments[1]);
+                    return Visit(node.Arguments[0]);
 
                 case MethodCall.Where:
                     return node.Arguments[0] is ConstantExpression? VisitUnary((UnaryExpression) node.Arguments[1]) : base.VisitMethodCall(node);
@@ -60,20 +60,18 @@ namespace Dapper.Contrib.Linq2Dapper.ContextBuilders
                 case MethodCall.Join:
                     return JoinMethod(node);
                 case MethodCall.Take:
-                    writer.TopCount = (int)QueryHelper.GetValueFromExpression(node.Arguments[1]);
+                    selectContext.Take((int)QueryHelper.GetValueFromExpression(node.Arguments[1]));
                     return node;
                 case MethodCall.Skip:
-                    // TODO record skip
+                    selectContext.Skip((int)QueryHelper.GetValueFromExpression(node.Arguments[1]));
                     return node;
                 case MethodCall.Single:
                 case MethodCall.First:
                 case MethodCall.FirstOrDefault:
-                    // TOP(1)
-                    writer.TopCount = 1;
+                    selectContext.Take(1);
                     return Visit(node.Arguments[1]);
                 case MethodCall.Distinct:
-                    // DISTINCT
-                    writer.IsDistinct = true;
+                    selectContext.RequireDistinct();
                     return node;
             }
             return base.VisitMethodCall(node);
@@ -216,8 +214,8 @@ namespace Dapper.Contrib.Linq2Dapper.ContextBuilders
             if (joinFromType.IsGenericType) joinFromType = joinFromType.GenericTypeArguments[1];
             var joinToType = ((LambdaExpression)((UnaryExpression)expression.Arguments[4]).Operand).Parameters[1].Type;
 
-            QueryHelper.GetTypeProperties(joinFromType);
-            var joinToTable = QueryHelper.GetTypeProperties(joinToType);
+            QueryHelper.GetTableHelper(joinFromType);
+            var joinToTable = QueryHelper.GetTableHelper(joinToType);
 
             var primaryJoinColumn = QueryHelper.GetPropertyNameWithIdentifierFromExpression(expression.Arguments[2]);
             var secondaryJoinColumn = QueryHelper.GetPropertyNameWithIdentifierFromExpression(expression.Arguments[3]);
@@ -229,8 +227,7 @@ namespace Dapper.Contrib.Linq2Dapper.ContextBuilders
 
         bool IsNullMethod(MethodCallExpression node)
         {
-            if (!QueryHelper.IsSpecificMemberExpression(node.Arguments[0], typeof (TData),
-                    CacheHelper.TryGetPropertyList<TData>())) return false;
+            if (!QueryHelper.IsSpecificMemberExpression(node.Arguments[0], typeof (TData), CacheHelper.TryGetPropertyList<TData>())) return false;
 
             writer.IsNullFunction();
             writer.OpenBrace();

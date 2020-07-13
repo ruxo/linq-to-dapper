@@ -1,35 +1,26 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using Dapper.Contrib.Linq2Dapper.ContextBuilders.SelectQuery;
 using Dapper.Contrib.Linq2Dapper.Helpers;
 
 namespace Dapper.Contrib.Linq2Dapper.Writers
 {
-    sealed class MsSqlExpressionWriter
-    {
-        readonly StringBuilder sb = new StringBuilder();
-    }
-
     /// <summary>
     /// Microsoft SQL SQL writer
     /// </summary>
     /// <typeparam name="TData"></typeparam>
     sealed class MsSqlWriter<TData>
     {
-        StringBuilder _selectStatement;
         readonly StringBuilder _joinTable;
         readonly StringBuilder _whereClause;
         readonly StringBuilder _orderBy;
 
         int _nextParameter;
 
-        string _parameter => $"ld__{_nextParameter += 1}";
+        string GetParameter() => $"ld__{_nextParameter += 1}";
 
-        internal Type SelectType;
         internal bool NotOperater;
-        internal int TopCount;
-        internal bool IsDistinct;
 
         internal DynamicParameters Parameters { get; }
 
@@ -39,45 +30,29 @@ namespace Dapper.Contrib.Linq2Dapper.Writers
             _joinTable = new StringBuilder();
             _whereClause = new StringBuilder();
             _orderBy = new StringBuilder();
-            SelectType = typeof(TData);
-            GetTypeProperties();
         }
 
-        static void GetTypeProperties()
+        public string SelectStatement(SelectBuilder selectContext)
         {
-            QueryHelper.GetTypeProperties(typeof (TData));
-        }
+            var primaryTable = QueryHelper.GetTableHelper(typeof(TData));
+            var selectTable = selectContext.GetTable();
 
-        public string SelectStatement()
-        {
-            var primaryTable = CacheHelper.TryGetTable<TData>();
-            var selectTable = (SelectType != typeof(TData)) ? CacheHelper.TryGetTable(SelectType) : primaryTable;
+            var sb = new StringBuilder();
 
-            _selectStatement = new StringBuilder();
+            sb.Append("SELECT ");
 
-            _selectStatement.Append("SELECT ");
+            if (selectContext.NumberOfTake != null)
+                sb.Append("TOP(" + selectContext.NumberOfTake + ") ");
 
-            if (TopCount > 0)
-                _selectStatement.Append("TOP(" + TopCount + ") ");
+            if (selectContext.IsDistinct)
+                sb.Append("DISTINCT ");
 
-            if (IsDistinct)
-                _selectStatement.Append("DISTINCT ");
+            sb.AppendJoin(',', selectTable.Columns.Values.Select(column => $"{selectTable.Identifier}.[{column}]"));
 
-            for (int i = 0; i < selectTable.Columns.Count; i++)
-            {
-                var x = selectTable.Columns.ElementAt(i);
-                _selectStatement.Append(string.Format("{0}.[{1}]", selectTable.Identifier, x.Value));
+            sb.Append($"FROM [{primaryTable.Name}] {primaryTable.Identifier}");
+            sb.Append(WriteClause());
 
-                if ((i + 1) != selectTable.Columns.Count)
-                    _selectStatement.Append(",");
-
-                _selectStatement.Append(" ");
-            }
-
-            _selectStatement.Append($"FROM [{primaryTable.Name}] {primaryTable.Identifier}");
-            _selectStatement.Append(WriteClause());
-
-            return _selectStatement.ToString();
+            return sb.ToString();
         }
 
         string WriteClause()
@@ -110,7 +85,7 @@ namespace Dapper.Contrib.Linq2Dapper.Writers
 
         internal void WriteJoin(string joinToTableName, string joinToTableIdentifier, string primaryJoinColumn, string secondaryJoinColumn)
         {
-            _joinTable.Append(string.Format(" JOIN [{0}] {1} ON {2} = {3}", joinToTableName, joinToTableIdentifier, primaryJoinColumn, secondaryJoinColumn));
+            _joinTable.Append($" JOIN [{joinToTableName}] {joinToTableIdentifier} ON {primaryJoinColumn} = {secondaryJoinColumn}");
         }
 
         internal void Write(object value)
@@ -126,7 +101,7 @@ namespace Dapper.Contrib.Linq2Dapper.Writers
                 return;
             }
 
-            var param = _parameter;
+            var param = GetParameter();
             Parameters.Add(param, val);
 
             Write("@" + param);

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -21,7 +21,7 @@ namespace Dapper.Contrib.Linq2Dapper.Helpers
                 (((MemberExpression)exp).Member.Name == memberName));
         }
 
-        internal static bool IsSpecificMemberExpression(Expression exp, Type declaringType, Dictionary<string, string> propertyList)
+        internal static bool IsSpecificMemberExpression(Expression exp, Type declaringType, IReadOnlyDictionary<string, string> propertyList)
         {
             if (propertyList == null) return false;
             return ((exp is MemberExpression) &&
@@ -75,28 +75,23 @@ namespace Dapper.Contrib.Linq2Dapper.Helpers
             throw new Exception("There is a bug in this program.");
         }
 
-        internal static string GetIndentifierFromExpression(Expression expression)
-        {
-            return GetTableFromExpression(expression).Identifier;
-        }
+        internal static string? GetIndentifierFromExpression(Expression expression) =>
+            GetTableFromExpression(expression)?.Identifier;
 
-        internal static TableHelper GetTableFromExpression(Expression expression)
-        {
-            var exp = GetMemberExpression(expression);
-            if (!(exp is MemberExpression)) return null;
-
-            return CacheHelper.TryGetTable(((MemberExpression)exp).Expression.Type);
-        }
+        internal static TableHelper? GetTableFromExpression(Expression expression) =>
+            GetMemberExpression(expression) is MemberExpression member
+                ? CacheHelper.TryGetTable(member.Expression.Type)
+                : null;
 
         internal static string GetPropertyNameWithIdentifierFromExpression(Expression expression)
         {
             var exp = GetMemberExpression(expression);
             if (!(exp is MemberExpression)) return string.Empty;
 
-            var table = CacheHelper.TryGetTable(((MemberExpression)exp).Expression.Type);
+            var table = GetTableHelper(((MemberExpression)exp).Expression.Type);
             var member = ((MemberExpression)exp).Member;
 
-            return string.Format("{0}.[{1}]", table.Identifier, table.Columns[member.Name]);
+            return $"{table.Identifier}.[{table.Columns[member.Name]}]";
         }
 
         internal static string GetPropertyNameFromExpression(Expression expression)
@@ -243,34 +238,27 @@ namespace Dapper.Contrib.Linq2Dapper.Helpers
             }
         }
 
-        internal static bool IsVariable(Expression expr)
-        {
-            return (expr is MemberExpression) && (((MemberExpression)expr).Expression is ConstantExpression);
-        }
+        internal static bool IsVariable(Expression expr) =>
+            expr is MemberExpression member && member.Expression is ConstantExpression;
 
-        internal static TableHelper GetTypeProperties(Type type)
+        internal static TableHelper GetTableHelper(Type type)
         {
             var table = CacheHelper.TryGetTable(type);
-            if (table.Name != null) return table; // have table in cache
+            if (table != null) return table; // have table in cache
 
-            // get properties add to cache
-            var properties = new Dictionary<string, string>();
-            type.GetProperties().ToList().ForEach(
-                    x =>
-                    {
-                        var col = (ColumnAttribute)x.GetCustomAttribute(typeof(ColumnAttribute));
-                        properties.Add(x.Name, (col != null) ? col.Name : x.Name);
-                    }
-                );
+            static string getColumnName(PropertyInfo property) {
+                var col = (ColumnAttribute?) property.GetCustomAttribute(typeof(ColumnAttribute));
+                return col == null ? property.Name : col.Name;
+            }
+            var properties = type.GetProperties().ToImmutableDictionary(key => key.Name, getColumnName);
 
-
-            var attrib = (TableAttribute)type.GetCustomAttribute(typeof(TableAttribute));
+            var attrib = (TableAttribute?) type.GetCustomAttribute(typeof(TableAttribute));
 
             table = new TableHelper
             {
-                Name = (attrib != null ? attrib.Name : type.Name),
+                Name = attrib != null ? attrib.Name : type.Name,
                 Columns = properties,
-                Identifier = string.Format("t{0}", CacheHelper.Size + 1)
+                Identifier = $"t{CacheHelper.Size + 1}"
             };
             CacheHelper.TryAddTable(type, table);
 
