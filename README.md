@@ -1,13 +1,16 @@
-# Linq2Dapper
+# Linq2Dapper Core
 
 A simple lightweight Linq provider for Dapper.Net
-Light weight Linq support for a light weight ORM. Linq2Dapper allows you to use type-safe Linq queries without the overhead of Linq2SQL or EntityFramework.
+Light weight Linq support for a light weight ORM. Linq2Dapper Core allows you to use type-safe Linq queries without the overhead of Linq2SQL or EntityFramework.
+
+Linq2Dapper project is originally created by Brent Mannering (https://github.com/brentmannering/linq-to-dapper) for .NET 4.5.  This Linq2Dapper project is an upgrade
+for .NET Core and aims to support a few more databases (e.g. SQLite and MySQL).
 
 ## Implementation
 
 Add the Linq2Dapper Nuget package from nuget.org
 
-    install-package Linq2Dapper
+    install-package RZ.Linq2Dapper
 
 ### Using the extension methods
 
@@ -136,3 +139,9 @@ select ...
 .OrderBy[Descending](...)
 .ThenBy[Descending](..)
 ```
+
+## Limitations ##
+
+In Summary:
+
+* SELECT expression can be the whole table only. Custom projection is not yet supported.

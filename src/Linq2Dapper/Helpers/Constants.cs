@@ -1,21 +1,23 @@
 ﻿namespace Dapper.Contrib.Linq2Dapper.Helpers
 {
-    class MethodCall
+    static class MethodCall
     {
-        internal const string Select = "Select";
-        internal const string EndsWith = "EndsWith";
-        internal const string StartsWith = "StartsWith";
-        internal const string Contains = "Contains";
-        internal const string IsNullOrEmpty = "IsNullOrEmpty";
-        internal const string Join = "Join";
-        internal const string Single = "Single";
-        internal const string First = "First";
-        internal const string FirstOrDefault = "FirstOrDefault";
-        internal const string Take = "Take";
-        internal const string Distinct = "Distinct";
-        internal const string OrderBy = "OrderBy";
-        internal const string ThenBy = "ThenBy";
-        internal const string OrderByDescending = "OrderByDescending";
-        internal const string ThenByDescending = "ThenByDescending";
+        public const string Select = "Select";
+        public const string Where = "Where";
+        public const string EndsWith = "EndsWith";
+        public const string StartsWith = "StartsWith";
+        public const string Contains = "Contains";
+        public const string IsNullOrEmpty = "IsNullOrEmpty";
+        public const string Join = "Join";
+        public const string Single = "Single";
+        public const string First = "First";
+        public const string FirstOrDefault = "FirstOrDefault";
+        public const string Take = "Take";
+        public const string Skip = "Skip";
+        public const string Distinct = "Distinct";
+        public const string OrderBy = "OrderBy";
+        public const string ThenBy = "ThenBy";
+        public const string OrderByDescending = "OrderByDescending";
+        public const string ThenByDescending = "ThenByDescending";
     }
 }

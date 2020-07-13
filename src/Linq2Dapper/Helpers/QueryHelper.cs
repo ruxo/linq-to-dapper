@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace Dapper.Contrib.Linq2Dapper.Helpers
 {
-    internal class QueryHelper
+    static class QueryHelper
     {
         internal static bool IsEqualsExpression(Expression exp)
         {
@@ -112,18 +112,16 @@ namespace Dapper.Contrib.Linq2Dapper.Helpers
         internal static Expression GetMemberExpression(Expression expression)
         {
             if (expression is UnaryExpression)
-                return GetMemberExpression((((UnaryExpression)expression).Operand));
+                return GetMemberExpression(((UnaryExpression)expression).Operand);
             if (expression is LambdaExpression)
-                return GetMemberExpression((((LambdaExpression)expression).Body));
+                return GetMemberExpression(((LambdaExpression)expression).Body);
             if (expression is MemberExpression)
                 return expression;
             return null;
         }
 
-        internal static object GetValueFromExpression(Expression expression)
-        {
-            return Expression.Lambda(expression).Compile().DynamicInvoke();
-        }
+        internal static object GetValueFromExpression(Expression expression) =>
+            Expression.Lambda(expression).Compile().DynamicInvoke();
 
         internal static string GetOperator(string methodName)
         {

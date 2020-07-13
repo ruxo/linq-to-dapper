@@ -8,19 +8,17 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Data.Common;
 using System.Reflection;
-using Dapper.Contrib.Linq2Dapper.Extensions;
+using Dapper.Contrib.Linq2Dapper.ContextBuilders;
 
 namespace Dapper.Contrib.Linq2Dapper
 {
     class QueryProvider<TData> : IQueryProvider
     {
         readonly IDbConnection connection;
-        readonly QueryBuilder<TData> qb;
 
         public QueryProvider(IDbConnection connection)
         {
             this.connection = connection;
-            qb = new QueryBuilder<TData>();
         }
 
         public IQueryable CreateQuery(Expression expression)
@@ -30,7 +28,7 @@ namespace Dapper.Contrib.Linq2Dapper
             {
                 return (IQueryable)Activator.CreateInstance(typeof(Linq2Dapper<TData>).MakeGenericType(elementType), this, expression);
             }
-            catch (System.Reflection.TargetInvocationException tie)
+            catch (TargetInvocationException tie)
             {
                 throw tie.InnerException;
             }
@@ -60,7 +58,7 @@ namespace Dapper.Contrib.Linq2Dapper
         // Executes the expression tree that is passed to it.
         object Query<T>(Expression expression)
         {
-            var (sql, parameters) = qb.Evaluate(expression);
+            var (sql, parameters) = new SelectQueryBuilder<TData>().Evaluate(expression);
             try {
                 var expected = typeof(T);
                 var isEnumerable = typeof(IEnumerable).IsAssignableFrom(expected);
@@ -73,7 +71,6 @@ namespace Dapper.Contrib.Linq2Dapper
                 throw new InvalidQueryException(sql, ex);
             }
         }
-
     }
 
     static class QueryUtils

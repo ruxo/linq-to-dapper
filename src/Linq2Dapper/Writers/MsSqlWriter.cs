@@ -2,40 +2,38 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using Dapper.Contrib.Linq2Dapper.Helpers;
 
-namespace Dapper.Contrib.Linq2Dapper.Helpers
+namespace Dapper.Contrib.Linq2Dapper.Writers
 {
-    internal class SqlWriter<TData>
+    sealed class MsSqlExpressionWriter
     {
-        private StringBuilder _selectStatement;
-        private readonly StringBuilder _joinTable;
-        private readonly StringBuilder _whereClause;
-        private readonly StringBuilder _orderBy;
+        readonly StringBuilder sb = new StringBuilder();
+    }
 
-        private int _nextParameter;
+    /// <summary>
+    /// Microsoft SQL SQL writer
+    /// </summary>
+    /// <typeparam name="TData"></typeparam>
+    sealed class MsSqlWriter<TData>
+    {
+        StringBuilder _selectStatement;
+        readonly StringBuilder _joinTable;
+        readonly StringBuilder _whereClause;
+        readonly StringBuilder _orderBy;
 
-        private string _parameter
-        {
-            get { return string.Format("ld__{0}", _nextParameter += 1); }
-        }
+        int _nextParameter;
+
+        string _parameter => $"ld__{_nextParameter += 1}";
 
         internal Type SelectType;
         internal bool NotOperater;
         internal int TopCount;
         internal bool IsDistinct;
 
-        internal DynamicParameters Parameters { get; private set; }
+        internal DynamicParameters Parameters { get; }
 
-        internal string Sql
-        {
-            get
-            {
-                SelectStatement();
-                return _selectStatement.ToString();
-            }
-        }
-
-        internal SqlWriter()
+        internal MsSqlWriter()
         {
             Parameters = new DynamicParameters();
             _joinTable = new StringBuilder();
@@ -45,12 +43,12 @@ namespace Dapper.Contrib.Linq2Dapper.Helpers
             GetTypeProperties();
         }
 
-        private void GetTypeProperties()
+        static void GetTypeProperties()
         {
             QueryHelper.GetTypeProperties(typeof (TData));
         }
 
-        private void SelectStatement()
+        public string SelectStatement()
         {
             var primaryTable = CacheHelper.TryGetTable<TData>();
             var selectTable = (SelectType != typeof(TData)) ? CacheHelper.TryGetTable(SelectType) : primaryTable;
@@ -76,11 +74,13 @@ namespace Dapper.Contrib.Linq2Dapper.Helpers
                 _selectStatement.Append(" ");
             }
 
-            _selectStatement.Append(string.Format("FROM [{0}] {1}", primaryTable.Name, primaryTable.Identifier));
+            _selectStatement.Append($"FROM [{primaryTable.Name}] {primaryTable.Identifier}");
             _selectStatement.Append(WriteClause());
+
+            return _selectStatement.ToString();
         }
 
-        private string WriteClause()
+        string WriteClause()
         {
             var clause = string.Empty;
 

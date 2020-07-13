@@ -38,6 +38,20 @@ namespace Dapper.Contrib.Linq2Dapper.Test
         }
 
         [Fact]
+        public void SelectAllRecordsWithSpecificColumn() {
+            using var cntx = new DataContext(CreateNewDatabase());
+
+            var results = (from x in cntx.DataTypes
+                           where x.Name == "text"
+                           select x.Name).ToArray();
+
+            results.Length.Should().Be(1);
+            var item = results[0];
+
+            item.Should().Be("text");
+        }
+
+        [Fact]
         public void JoinWhere() {
             using var cntx = new DataContext(CreateNewDatabase());
 
